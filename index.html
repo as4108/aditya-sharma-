@@ -1,0 +1,429 @@
+
+
+
+.
+<!DOCTYPE html> <!-- DESIGN CONCEPT: "BACKTRACK" — a portfolio built as a newspaper Sudoku page. Aditya is a fresher computer-science student whose headline project is a C++ Sudoku solver built on backtracking, so the whole site is a puzzle sheet. The hero is a live 9x9 board that solves itself with a visible backtracking algorithm (placements in pencil blue, dead-ends flashing red). Navigation is a numbered rail like the digits of a grid. Projects are phrased as clues, skills are the "givens" in a 3x3 box (with empty cells still to be filled), education is a row of constraint cells, and contact is "the last empty cell". Type pairs Fraunces (newsprint serif), JetBrains Mono (code/UI) and Caveat (pencil margin notes). Reduced-motion users get the board solved instantly with no animation. Every fact comes from the resume; nothing is invented. --> <html lang="en"> <head> <meta charset="utf-8"> <meta name="viewport" content="width=device-width, initial-scale=1"> <title>Aditya Sharma — B.Tech CSE Student · Portfolio</title> <meta name="description" content="Portfolio of Aditya Sharma, B.Tech Computer Science student at GNA University (2023–2027). Python, C++, data structures and problem solving."> <meta name="theme-color" content="#f3eee2"> <link rel="preconnect" href="https://fonts.googleapis.com"> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"> <style> :root{ --paper:#f3eee2; --paper-2:#ebe4d3; --cell:#fbf8f0; --ink:#1b1a17; --muted:#57534a; --line:#cfc7b2; --pencil:#2b4f9e; --accent:#c0301c; --good:#1f6b45; --hl:#fff1b8; --shadow:rgba(27,26,23,.14); --serif:'Fraunces','Iowan Old Style','Palatino Linotype',Georgia,serif; --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; --hand:'Caveat','Bradley Hand','Segoe Print',cursive; --rail:84px; } @media (prefers-color-scheme:dark){ :root{ --paper:#15140f; --paper-2:#1d1c15; --cell:#1a1913; --ink:#ece6d6; --muted:#b3ad9c; --line:#3a382c; --pencil:#8fb2ff; --accent:#ff7a5c; --good:#5fcf9a; --hl:#3a3414; --shadow:rgba(0,0,0,.5); } meta[name=theme-color]{content:#15140f} } *,*::before,*::after{box-sizing:border-box} html{scroll-behavior:smooth;-webkit-text-size-adjust:100%} body{ margin:0; background-color:var(--paper); background-image: linear-gradient(var(--line) 1px,transparent 1px), linear-gradient(90deg,var(--line) 1px,transparent 1px); background-size:48px 48px; background-position:-1px -1px; color:var(--ink); font-family:var(--serif); font-size:1.0625rem; line-height:1.6; padding-left:var(--rail); overflow-x:hidden; } body::before{ /* fade the grid so text stays readable */ content:"";position:fixed;inset:0;pointer-events:none; background:radial-gradient(ellipse at 30% 20%,transparent 0,var(--paper) 85%); opacity:.82;z-index:0; } a{color:inherit} :focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:2px} .skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:var(--paper);padding:.6rem 1rem;font-family:var(--mono);z-index:100} .skip:focus{left:calc(var(--rail) + 8px)} .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* ---------- RAIL NAV ---------- */
+.rail{
+position:fixed;left:0;top:0;bottom:0;width:var(--rail);z-index:50;
+background:var(--paper-2);border-right:3px solid var(--ink);
+display:flex;flex-direction:column;align-items:stretch;
+}
+.rail .mark{
+display:grid;place-items:center;height:76px;border-bottom:3px solid var(--ink);
+font:900 1.6rem/1 var(--serif);text-decoration:none;letter-spacing:-.03em;
+}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;flex:1}
+.rail li{flex:1;display:flex;border-bottom:1px solid var(--line)}
+.rail li a{
+flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+text-decoration:none;font-family:var(--mono);color:var(--muted);
+transition:background .25s,color .25s;
+}
+.rail li a .d{font:700 1.5rem/1 var(--serif);color:var(--ink)}
+.rail li a .l{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase}
+.rail li a:hover{background:var(--hl)}
+.rail li a[aria-current="true"]{background:var(--ink);color:var(--paper)}
+.rail li a[aria-current="true"] .d{color:var(--paper)}
+
+/* ---------- LAYOUT ---------- */
+main{position:relative;z-index:1}
+section{padding:clamp(3.5rem,8vw,7rem) clamp(1.1rem,5vw,4.5rem);position:relative}
+.wrap{max-width:1120px;margin:0 auto}
+.sec-head{display:flex;align-items:flex-end;gap:1rem;margin-bottom:2.2rem;flex-wrap:wrap}
+.numeral{
+font:900 clamp(4.5rem,13vw,9rem)/.8 var(--serif);color:transparent;
+-webkit-text-stroke:2px var(--ink);letter-spacing:-.04em;
+}
+.sec-head h2{
+margin:0;font:900 clamp(1.9rem,5vw,3.2rem)/1 var(--serif);letter-spacing:-.02em;
+}
+.sec-head p{
+margin:.4rem 0 0;font-family:var(--mono);font-size:.82rem;color:var(--muted);max-width:46ch;
+}
+.kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- HERO ---------- */
+#top{min-height:100svh;display:flex;align-items:center;padding-top:clamp(2.5rem,6vw,5rem)}
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(1.5rem,5vw,4rem);align-items:center}
+.hero h1{
+margin:.7rem 0 1.2rem;font:900 clamp(3.2rem,9.4vw,7.6rem)/.88 var(--serif);letter-spacing:-.045em;
+}
+.hero h1 span{display:block}
+.hero h1 .last{font-style:italic;font-weight:700;color:var(--accent)}
+.lede{font-size:clamp(1.05rem,2vw,1.3rem);max-width:34ch;margin:0 0 1.4rem}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.6rem;padding:0;list-style:none}
+.tags li{
+font-family:var(--mono);font-size:.78rem;padding:.3rem .65rem;border:2px solid var(--ink);background:var(--cell);
+}
+.btn{
+display:inline-flex;align-items:center;gap:.5rem;font:700 .86rem/1 var(--mono);text-decoration:none;
+padding:.85rem 1.2rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;
+box-shadow:4px 4px 0 var(--accent);transition:transform .15s,box-shadow .15s;
+}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--accent)}
+.btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--accent)}
+.btn.ghost{background:var(--cell);color:var(--ink);box-shadow:4px 4px 0 var(--line)}
+.btn.ghost:hover{box-shadow:6px 6px 0 var(--line)}
+.btn.sm{padding:.6rem .85rem;font-size:.78rem;box-shadow:3px 3px 0 var(--accent)}
+.btn.sm.ghost{box-shadow:3px 3px 0 var(--line)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:.9rem}
+
+/* board */
+.board-wrap{width:100%;max-width:540px;justify-self:end}
+.board-bar{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap}
+.puzzle-pick{display:flex;gap:.4rem}
+.puzzle-pick button{
+font:500 .74rem var(--mono);padding:.35rem .6rem;border:2px solid var(--ink);background:var(--cell);color:var(--ink);cursor:pointer;
+}
+.puzzle-pick button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.board{
+display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1/1;width:100%;
+border:4px solid var(--ink);background:var(--cell);box-shadow:10px 10px 0 var(--shadow);
+}
+.cell{
+display:grid;place-items:center;border:1px solid var(--line);
+font:700 clamp(.95rem,4.6vw,1.75rem)/1 var(--mono);color:var(--pencil);user-select:none;
+transition:background-color .2s;
+}
+.cell:nth-child(3n):not(:nth-child(9n)){border-right:3px solid var(--ink)}
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54){border-bottom:3px solid var(--ink)}
+.cell.given{color:var(--ink)}
+.cell.cur{background:var(--hl)}
+.cell.pop{animation:pop .35s ease}
+.cell.back{animation:back .5s ease}
+@keyframes pop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes back{0%{background:var(--accent);color:#fff}100%{background:transparent}}
+.board.done{box-shadow:10px 10px 0 var(--good)}
+.board.done .cell:not(.given){color:var(--good)}
+.stats{
+display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:1rem;border:2px solid var(--ink);background:var(--cell);
+font-family:var(--mono);
+}
+.stats div{padding:.55rem .7rem;border-right:2px solid var(--ink)}
+.stats div:last-child{border-right:0}
+.stats dt{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stats dd{margin:0;font:700 1.35rem/1.2 var(--mono)}
+.stats .bt dd{color:var(--accent)}
+.controls{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1rem}
+.speed{display:flex;align-items:center;gap:.5rem;font:500 .74rem var(--mono);margin-left:auto}
+.speed input{accent-color:var(--accent);width:110px}
+.status{font:500 .78rem/1.5 var(--mono);color:var(--muted);margin:.8rem 0 0;min-height:2.4em}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;font:500 .7rem var(--mono);color:var(--muted);margin-top:.4rem}
+.legend i{display:inline-block;width:.8rem;height:.8rem;vertical-align:-1px;margin-right:.35rem;border:1px solid var(--ink)}
+
+/* ---------- PROJECTS ---------- */
+.clues{display:grid;gap:2rem}
+.clue{
+display:grid;grid-template-columns:90px minmax(0,1fr);border:3px solid var(--ink);background:var(--cell);
+box-shadow:8px 8px 0 var(--shadow);
+}
+.clue .no{
+display:grid;place-items:center;background:var(--ink);color:var(--paper);font:900 3rem/1 var(--serif);
+}
+.clue .body{padding:1.5rem clamp(1.1rem,3vw,2rem)}
+.clue .q{font:italic 400 1.05rem/1.5 var(--serif);color:var(--muted);margin:0 0 .5rem}
+.clue h3{margin:0 0 .6rem;font:900 clamp(1.5rem,3.4vw,2.2rem)/1.1 var(--serif);letter-spacing:-.02em}
+.clue h3 small{font:500 .78rem var(--mono);letter-spacing:.04em;padding:.2rem .5rem;border:2px solid var(--accent);color:var(--accent);margin-left:.5rem;vertical-align:middle;white-space:nowrap}
+.clue p{margin:0 0 1rem;max-width:62ch}
+details{border-top:2px dashed var(--line);padding-top:.9rem}
+summary{
+cursor:pointer;font:700 .82rem var(--mono);list-style:none;display:inline-flex;gap:.5rem;align-items:center;
+padding:.4rem .2rem;
+}
+summary::-webkit-details-marker{display:none}
+summary::before{content:”+”;display:grid;place-items:center;width:1.4rem;height:1.4rem;border:2px solid var(--ink);font-weight:700}
+details[open] summary::before{content:”–“}
+pre{
+margin:.9rem 0 .4rem;padding:1rem 1.1rem;background:var(--ink);color:var(--paper);font:400 .82rem/1.65 var(--mono);
+overflow-x:auto;border-left:6px solid var(--accent);
+}
+pre .c{color:
+#9fc0ff;opacity:.9}
+@media (prefers-color-scheme:dark){pre{background:
+#0d0c08;border:1px solid var(--line);border-left:6px solid var(--accent)}}
+.note{font:500 .74rem/1.5 var(--mono);color:var(--muted);margin:0}
+.oop{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin:.9rem 0 .5rem;font-family:var(--mono)}
+.oop .box{border:2px solid var(--ink);min-width:140px}
+.oop .box b{display:block;background:var(--ink);color:var(--paper);padding:.3rem .6rem;font-size:.78rem}
+.oop .box span{display:block;padding:.45rem .6rem;font-size:.76rem;color:var(--muted)}
+.oop .arrow{font-size:1.4rem;color:var(--accent)}
+
+/* ---------- SKILLS: givens ---------- /
+.givens{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(1.5rem,5vw,4rem);align-items:center}
+.box3{
+display:grid;grid-template-columns:repeat(3,1fr);aspect-ratio:1/1;width:100%;max-width:520px;
+border:4px solid var(--ink);background:var(--cell);box-shadow:10px 10px 0 var(--shadow);
+}
+.sk{
+position:relative;border:1px solid var(--ink);padding:.7rem;display:flex;flex-direction:column;justify-content:flex-end;
+background:var(--cell);transition:background .25s,color .25s,transform .25s;overflow:hidden;
+}
+.sk .pm{ / pencil marks */
+position:absolute;top:.4rem;left:.5rem;right:.5rem;display:grid;grid-template-columns:repeat(3,1fr);
+font:500 .6rem/1.4 var(--mono);color:var(--muted);opacity:.7;text-align:center;
+}
+.sk .big{font:900 clamp(1.5rem,5vw,2.6rem)/1 var(--serif);color:var(--accent)}
+.sk .name{font:700 clamp(.66rem,1.9vw,.92rem)/1.25 var(--mono);margin-top:.3rem;overflow-wrap:anywhere}
+.sk .cat{font:500 clamp(.54rem,1.5vw,.66rem) var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button.sk,.sk[tabindex]{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.sk:hover,.sk:focus-visible,.sk.lit{background:var(--ink);color:var(--paper)}
+.sk:hover .cat,.sk:focus-visible .cat,.sk.lit .cat,.sk:hover .pm,.sk.lit .pm,.sk:focus-visible .pm{color:var(--paper)}
+.sk.empty{align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,transparent 0 8px,var(--line) 8px 9px)}
+.sk.empty::after{content:”?”;font:700 1.4rem var(--hand);color:var(--muted)}
+.givens-copy h3{margin:0 0 .8rem;font:900 clamp(1.4rem,3.2vw,2rem)/1.15 var(--serif);letter-spacing:-.02em}
+.givens-copy p{margin:0 0 1rem;max-width:46ch}
+.skill-readout{
+min-height:5.5rem;border:2px solid var(--ink);padding:.9rem 1rem;background:var(--cell);font:500 .85rem/1.6 var(--mono);
+}
+.skill-readout b{color:var(--accent)}
+
+/* ---------- EDUCATION ---------- */
+.row3{display:grid;grid-template-columns:repeat(3,1fr);border:4px solid var(--ink);background:var(--cell);box-shadow:10px 10px 0 var(--shadow)}
+.ed{padding:1.4rem 1.2rem 1.6rem;border-right:3px solid var(--ink);position:relative;min-width:0}
+.ed:last-child{border-right:0;background:var(--hl)}
+.ed .yr{font:900 clamp(2rem,5vw,3.6rem)/1 var(--serif);color:transparent;-webkit-text-stroke:2px var(--ink);letter-spacing:-.03em}
+.ed:last-child .yr{color:var(--accent);-webkit-text-stroke:0}
+.ed h3{margin:.8rem 0 .2rem;font:700 1.1rem/1.3 var(--serif)}
+.ed p{margin:0;font:500 .82rem/1.5 var(--mono);color:var(--muted)}
+.ed:last-child p{color:var(--ink)}
+.ed .tagx{position:absolute;top:.7rem;right:.8rem;font:700 .64rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.rule-note{margin:1.2rem 0 0;font:500 .8rem/1.6 var(--mono);color:var(--muted);max-width:60ch}
+
+/* ---------- MARGIN NOTES ---------- */
+.margin{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem}
+.sticky{
+background:var(--cell);border:2px solid var(--ink);padding:1.6rem 1.3rem;min-height:170px;display:flex;flex-direction:column;justify-content:space-between;
+box-shadow:6px 6px 0 var(--shadow);transition:transform .3s;
+}
+.sticky:nth-child(1){transform:rotate(-1.6deg)}
+.sticky:nth-child(2){transform:rotate(1.2deg)}
+.sticky:nth-child(3){transform:rotate(-.8deg)}
+.sticky:hover{transform:rotate(0) translateY(-4px)}
+.sticky .hand{font:700 clamp(1.9rem,4vw,2.6rem)/1.05 var(--hand);color:var(--pencil)}
+.sticky .tiny{font:500 .72rem var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- CONTACT ---------- */
+.contact{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(1.5rem,5vw,4rem);align-items:start}
+.mini{
+display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,260px);aspect-ratio:1/1;border:4px solid var(--ink);background:var(--cell);
+margin-bottom:1.5rem;box-shadow:8px 8px 0 var(--shadow)
+}
+.mini span{display:grid;place-items:center;border:1px solid var(--line);font:700 1.6rem var(--mono);color:var(--ink)}
+.mini span.me{background:var(--hl);color:var(--accent);animation:blink 1.2s steps(2,start) infinite}
+@keyframes blink{50%{background:transparent}}
+.contact h3{margin:0 0 .6rem;font:900 clamp(1.7rem,4vw,2.6rem)/1.05 var(--serif);letter-spacing:-.02em}
+.contact-list{list-style:none;margin:1.2rem 0 0;padding:0;display:grid;gap:.8rem}
+.contact-list li{
+display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;
+border:2px solid var(--ink);background:var(--cell);padding:.7rem .9rem;
+}
+.contact-list .k{font:500 .66rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block}
+.contact-list .v{font:700 .98rem var(--mono);overflow-wrap:anywhere}
+.contact-list a.v{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--accent)}
+form{border:3px solid var(--ink);background:var(--cell);padding:clamp(1rem,3vw,1.8rem);box-shadow:8px 8px 0 var(--shadow);display:grid;gap:1rem}
+label{font:700 .76rem var(--mono);letter-spacing:.06em;text-transform:uppercase;display:grid;gap:.4rem}
+input[type=text],input[type=email],textarea{
+font:500 1rem/1.5 var(--mono);color:var(--ink);background:var(--paper);border:2px solid var(--ink);padding:.7rem .8rem;width:100%;border-radius:0;
+}
+textarea{min-height:140px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+.form-note{font:500 .74rem/1.5 var(--mono);color:var(--muted);margin:0}
+.toast{font:700 .8rem var(--mono);color:var(--good);min-height:1.3em;margin:.2rem 0 0}
+
+footer{position:relative;z-index:1;padding:2rem clamp(1.1rem,5vw,4.5rem) 3rem;border-top:3px solid var(--ink);background:var(--paper-2);
+display:flex;flex-wrap:wrap;justify-content:space-between;gap:.6rem;font:500 .78rem var(--mono);color:var(--muted)}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:980px){
+.hero,.givens,.contact{grid-template-columns:1fr}
+.board-wrap{justify-self:center}
+#top{min-height:auto}
+.box3{margin:0 auto}
+}
+@media (max-width:760px){
+:root{--rail:0px}
+body{padding-bottom:64px}
+.rail{
+top:auto;right:0;width:auto;height:60px;flex-direction:row;border-right:0;border-top:3px solid var(--ink);
+}
+.rail .mark{display:none}
+.rail ol{flex-direction:row}
+.rail li{border-bottom:0;border-right:1px solid var(--line)}
+.rail li:last-child{border-right:0}
+.rail li a .l{display:none}
+.rail li a .d{font-size:1.35rem}
+.skip:focus{left:8px}
+.clue{grid-template-columns:1fr}
+.clue .no{font-size:1.8rem;padding:.4rem;justify-content:start;padding-left:1.1rem}
+.row3{grid-template-columns:1fr}
+.ed{border-right:0;border-bottom:3px solid var(--ink)}
+.ed:last-child{border-bottom:0}
+.margin{grid-template-columns:1fr}
+.sticky{min-height:120px}
+.speed{margin-left:0;width:100%}
+.speed input{flex:1}
+.sec-head{margin-bottom:1.6rem}
+}
+@media (max-width:380px){
+.stats dd{font-size:1.05rem}
+.stats div{padding:.45rem .5rem}
+.btn{padding:.8rem 1rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+html{scroll-behavior:auto}
+,::before,*::after{animation:none!important;transition:none!important}
+.reveal{opacity:1;transform:none}
+.sticky{transform:none!important}
+}
+</style>
+
+</head> <body> <a class="skip" href="#main">Skip to content</a> <nav class="rail" aria-label="Sections"> <a class="mark" href="#top" aria-label="Aditya Sharma — back to top">AS</a> <ol> <li><a href="#top" data-sec="top"><span class="d">1</span><span class="l">Solver</span><span class="sr">Intro and live solver</span></a></li> <li><a href="#solutions" data-sec="solutions"><span class="d">2</span><span class="l">Projects</span><span class="sr">Projects</span></a></li> <li><a href="#givens" data-sec="givens"><span class="d">3</span><span class="l">Givens</span><span class="sr">Skills</span></a></li> <li><a href="#constraints" data-sec="constraints"><span class="d">4</span><span class="l">Path</span><span class="sr">Education</span></a></li> <li><a href="#margin" data-sec="margin"><span class="d">5</span><span class="l">Notes</span><span class="sr">Interests</span></a></li> <li><a href="#contact" data-sec="contact"><span class="d">6</span><span class="l">Contact</span><span class="sr">Contact</span></a></li> </ol> </nav> <main id="main"> <!-- 1 · HERO / LIVE SOLVER --> <section id="top" aria-labelledby="hero-title"> <div class="wrap hero"> <div> <p class="kicker">B.Tech CSE · GNA University · 2023 – 2027</p> <h1 id="hero-title"><span>Aditya</span><span class="last">Sharma</span></h1> <p class="lede">Computer science student who treats every problem like a puzzle: try a move, check the constraints, step back when it breaks, and keep going until it all fits.</p> <ul class="tags" aria-label="Core skills"> <li>Python</li><li>C++</li><li>Data Structures</li><li>Problem Solving</li> </ul> <div class="hero-cta"> <a class="btn" href="#solutions">See my projects →</a> <a class="btn ghost" href="#contact">Fill the last cell</a> </div> </div>
+  <div class="board-wrap">
+    <div class="board-bar">
+      <span class="kicker">Live backtracking demo</span>
+      <div class="puzzle-pick" role="group" aria-label="Choose a puzzle">
+        <button type="button" data-p="0" aria-pressed="true">Puzzle A</button>
+        <button type="button" data-p="1" aria-pressed="false">Puzzle B</button>
+      </div>
+    </div>
+    <div id="board" class="board" role="img" aria-label="Sudoku board being solved by a backtracking algorithm"></div>
+    <dl class="stats">
+      <div><dt>Placements</dt><dd id="s-steps">0</dd></div>
+      <div class="bt"><dt>Backtracks</dt><dd id="s-back">0</dd></div>
+      <div><dt>Empty</dt><dd id="s-empty">0</dd></div>
+    </dl>
+    <div class="controls">
+      <button id="btn-solve" class="btn sm" type="button">Solve</button>
+      <button id="btn-reset" class="btn sm ghost" type="button">Reset</button>
+      <label class="speed" for="speed">Speed
+        <input id="speed" type="range" min="1" max="5" value="3" aria-describedby="speed-out">
+        <output id="speed-out">Fast</output>
+      </label>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--cell)"></i>Given</span>
+      <span><i style="background:var(--pencil)"></i>Tried</span>
+      <span><i style="background:var(--accent)"></i>Backtrack</span>
+    </div>
+    <p id="status" class="status" aria-live="polite">Watch the solver work, the same idea behind my C++ Sudoku project.</p>
+    <noscript><p class="status">Enable JavaScript to watch the live solver.</p></noscript>
+  </div>
+</div>
+</section> <!-- 2 · PROJECTS --> <section id="solutions" aria-labelledby="sol-title"> <div class="wrap"> <header class="sec-head reveal"> <span class="numeral" aria-hidden="true">02</span> <div> <h2 id="sol-title">Solutions</h2> <p>Two projects, each written up as the clue it answers.</p> </div> </header>
+  <div class="clues">
+    <article class="clue reveal">
+      <div class="no" aria-hidden="true">1</div>
+      <div class="body">
+        <p class="q">Clue: Given a 9×9 grid with blanks, fill it so no row, column or box repeats a digit.</p>
+        <h3>Sudoku Solver using C++ <small>C++ · Backtracking</small></h3>
+        <p>Developed a program that solves Sudoku puzzles using backtracking algorithms: place a digit, test it against the rules, and undo the move the moment it leads to a dead end.</p>
+        <details>
+          <summary>How backtracking works</summary>
+<pre><span class="c">// the idea behind the project, in pseudocode</span> solve(grid): cell = next empty cell if none: return SOLVED for digit in 1..9: if digit fits row, column and box: place digit if solve(grid): return SOLVED undo digit <span class="c">// backtrack</span> return STUCK</pre>
+          <p class="note">Pseudocode for illustration, not my source code. The board in section 1 re-creates the same idea in JavaScript for this page.</p>
+        </details>
+      </div>
+    </article>
+
+    <article class="clue reveal">
+      <div class="no" aria-hidden="true">2</div>
+      <div class="body">
+        <p class="q">Clue: Model a real-world thing as code, with its own data and behaviour.</p>
+        <h3>Basic Python Class Project <small>Python · OOP</small></h3>
+        <p>Created simple Python-based applications demonstrating object-oriented programming concepts.</p>
+        <details>
+          <summary>Concept sketch</summary>
+          <div class="oop" aria-label="Diagram: a class is a blueprint, an object is an instance of it">
+            <div class="box"><b>Class</b><span>blueprint</span></div>
+            <span class="arrow" aria-hidden="true">→</span>
+            <div class="box"><b>Object</b><span>instance</span></div>
+          </div>
+          <p class="note">A generic illustration of the OOP idea this project explores.</p>
+        </details>
+      </div>
+    </article>
+  </div>
+</div>
+</section> <!-- 3 · SKILLS --> <section id="givens" aria-labelledby="giv-title"> <div class="wrap"> <header class="sec-head reveal"> <span class="numeral" aria-hidden="true">03</span> <div> <h2 id="giv-title">The Givens</h2> <p>Digits already on my board. Hover, tap or focus one.</p> </div> </header>
+  <div class="givens">
+    <div class="box3 reveal" id="box3">
+      <button class="sk" type="button" data-k="Python" data-t="Programming language. Used for my class project on object-oriented programming.">
+        <span class="pm" aria-hidden="true"><i>1</i><i>2</i><i>4</i></span>
+        <span class="big" aria-hidden="true">1</span><span class="name">Python</span><span class="cat">Language</span>
+      </button>
+      <button class="sk" type="button" data-k="C++" data-t="Programming language. Used for my Sudoku solver built with backtracking.">
+        <span class="pm" aria-hidden="true"><i>2</i><i>5</i><i>7</i></span>
+        <span class="big" aria-hidden="true">2</span><span class="name">C++</span><span class="cat">Language</span>
+      </button>
+      <div class="sk empty" aria-hidden="true"></div>
+
+      <div class="sk empty" aria-hidden="true"></div>
+      <button class="sk" type="button" data-k="Data Structures" data-t="A core computer science foundation listed on my resume.">
+        <span class="pm" aria-hidden="true"><i>3</i><i>6</i><i>9</i></span>
+        <span class="big" aria-hidden="true">3</span><span class="name">Data Structures</span><span class="cat">Foundation</span>
+      </button>
+      <div class="sk empty" aria-hidden="true"></div>
+
+      <button class="sk" type="button" data-k="Problem Solving" data-t="The thread through everything I build: break it down, test it, fix it.">
+        <span class="pm" aria-hidden="true"><i>4</i><i>8</i><i>9</i></span>
+        <span class="big" aria-hidden="true">4</span><span class="name">Problem Solving</span><span class="cat">Foundation</span>
+      </button>
+      <div class="sk empty" aria-hidden="true"></div>
+      <button class="sk" type="button" data-k="Basic Algorithmic Thinking" data-t="Thinking in steps, conditions and trade-offs. Practised through backtracking in my Sudoku solver.">
+        <span class="pm" aria-hidden="true"><i>1</i><i>5</i><i>6</i></span>
+        <span class="big" aria-hidden="true">5</span><span class="name">Algorithmic Thinking</span><span class="cat">Basic</span>
+      </button>
+    </div>
+
+    <div class="givens-copy reveal">
+      <h3>Solid foundations, with plenty of empty cells left to fill.</h3>
+      <p>Two languages, the core building blocks of data structures, and a habit of breaking problems into small steps. The striped cells are what I haven't learned yet; learning new technologies is one of my favourite things to do.</p>
+      <div class="skill-readout" id="readout" aria-live="polite"><b>Select a digit</b><br>to read what it means for my work.</div>
+    </div>
+  </div>
+</div>
+</section> <!-- 4 · EDUCATION --> <section id="constraints" aria-labelledby="con-title"> <div class="wrap"> <header class="sec-head reveal"> <span class="numeral" aria-hidden="true">04</span> <div> <h2 id="con-title">The Path</h2> <p>Each stage adds a rule the next one builds on.</p> </div> </header>
+  <div class="row3 reveal">
+    <article class="ed">
+      <div class="yr">2019</div>
+      <h3>Secondary (10th)</h3>
+      <p>HP Board</p>
+    </article>
+    <article class="ed">
+      <div class="yr">2021</div>
+      <h3>Senior Secondary (12th)</h3>
+      <p>HP Board</p>
+    </article>
+    <article class="ed">
+      <span class="tagx">Now</span>
+      <div class="yr">2023–27</div>
+      <h3>B.Tech, Computer Science</h3>
+      <p>GNA University</p>
+    </article>
+  </div>
+  <p class="rule-note reveal">Read left to right: school boards in Himachal Pradesh, then a computer science degree at GNA University.</p>
+</div>
+</section> <!-- 5 · INTERESTS --> <section id="margin" aria-labelledby="mar-title"> <div class="wrap"> <header class="sec-head reveal"> <span class="numeral" aria-hidden="true">05</span> <div> <h2 id="mar-title">Notes in the Margin</h2> <p>What I do when nobody is grading the puzzle.</p> </div> </header> <ul class="margin" style="list-style:none;margin:0;padding:0"> <li class="sticky reveal"><span class="tiny">Hobby 1</span><span class="hand">Coding</span></li> <li class="sticky reveal"><span class="tiny">Hobby 2</span><span class="hand">Gaming</span></li> <li class="sticky reveal"><span class="tiny">Hobby 3</span><span class="hand">Learning new technologies</span></li> </ul> </div> </section> <!-- 6 · CONTACT --> <section id="contact" aria-labelledby="con2-title"> <div class="wrap contact"> <div class="reveal"> <div class="mini" aria-hidden="true"> <span>4</span><span>7</span><span>1</span> <span>9</span><span class="me">?</span><span>3</span> <span>2</span><span>8</span><span>6</span> </div> <p class="kicker">06 · Contact</p> <h3 id="con2-title">One cell left. It's yours.</h3> <p>I'm a student looking for opportunities to apply my technical skills, gain practical experience and grow in computer science. Send me a note.</p> <ul class="contact-list"> <li> <span><span class="k">Email</span><a class="v" href="mailto:as4108719@gmail.com">as4108719@gmail.com</a></span> <button class="btn sm ghost" type="button" data-copy="as4108719@gmail.com">Copy</button> </li> <li> <span><span class="k">Phone</span><a class="v" href="tel:7018590212">7018590212</a></span> <button class="btn sm ghost" type="button" data-copy="7018590212">Copy</button> </li> <li> <span><span class="k">Location</span><span class="v">Himachal Pradesh</span></span> </li> </ul> <p class="toast" id="toast" role="status"></p> </div>
+  <form id="contact-form" class="reveal" action="mailto:as4108719@gmail.com" method="post" enctype="text/plain" novalidate>
+    <label for="f-name">Your name
+      <input id="f-name" name="name" type="text" autocomplete="name" placeholder="Your name" required>
+    </label>
+    <label for="f-email">Your email
+      <input id="f-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+    </label>
+    <label for="f-msg">Message
+      <textarea id="f-msg" name="message" placeholder="Hi Aditya, …" required></textarea>
+    </label>
+    <button class="btn" type="submit">Send via your email app →</button>
+    <p class="form-note">This opens your email app with the message ready to send to as4108719@gmail.com. Nothing is stored on this page.</p>
+    <p class="toast" id="form-toast" role="status"></p>
+  </form>
+</div>
+</section> </main> <footer> <span>© 2026 Aditya Sharma</span> <span>B.Tech CSE · GNA University · Himachal Pradesh</span> </footer> <script> (function(){ 'use strict'; var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; /* ---------- Reveal on scroll ---------- */ var revealEls = document.querySelectorAll('.reveal'); if('IntersectionObserver' in window && !reduce){ var rio = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); rio.unobserve(e.target);} }); },{threshold:.12}); revealEls.forEach(function(el){ rio.observe(el); }); } else { revealEls.forEach(function(el){ el.classList.add('in'); }); } /* ---------- Active rail link ---------- */ var links = document.querySelectorAll('.rail a[data-sec]'); var secs = ['top','solutions','givens','constraints','margin','contact'] .map(function(id){ return document.getElementById(id); }).filter(Boolean); function setActive(id){ links.forEach(function(a){ if(a.getAttribute('data-sec') === id){ a.setAttribute('aria-current','true'); } else { a.removeAttribute('aria-current'); } }); } setActive('top'); if('IntersectionObserver' in window){ var sio = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if(e.isIntersecting){ setActive(e.target.id); } }); },{rootMargin:'-45% 0px -50% 0px'}); secs.forEach(function(s){ sio.observe(s); }); } /* ---------- Sudoku backtracking visualizer ---------- */ var PUZZLES = [ '530070000600195000098000060800060003400803001700020006060000280000419005000080079', '003020600900305001001806400008102900700000008006708200002609500800203009005010300' ]; var SPEEDS = [ {label:'Slow', interval:180, per:1}, {label:'Medium', interval:70, per:1}, {label:'Fast', interval:16, per:2}, {label:'Turbo', interval:0, per:12}, {label:'Instant',interval:0, per:100000} ]; var boardEl = document.getElementById('board'); var elSteps = document.getElementById('s-steps'); var elBack = document.getElementById('s-back'); var elEmpty = document.getElementById('s-empty'); var btnSolve= document.getElementById('btn-solve'); var btnReset= document.getElementById('btn-reset'); var speedIn = document.getElementById('speed'); var speedOut= document.getElementById('speed-out'); var statusEl= document.getElementById('status'); var pickBtns= document.querySelectorAll('.puzzle-pick button'); var cells = []; for(var i=0;i<81;i++){ var d = document.createElement('div'); d.className = 'cell'; d.setAttribute('aria-hidden','true'); boardEl.appendChild(d); cells.push(d); } var grid, given, empties, gen, running = false, finished = false; var steps = 0, backs = 0, raf = 0, last = 0, cur = -1, pIndex = 0; function load(p){ pIndex = p; var s = PUZZLES[p]; grid = []; given = []; empties = []; for(var i=0;i<81;i++){ var v = parseInt(s.charAt(i),10); grid.push(v); given.push(v !== 0); if(v === 0) empties.push(i); } steps = 0; backs = 0; finished = false; running = false; cur = -1; cancelAnimationFrame(raf); boardEl.classList.remove('done'); gen = solver(); renderAll(); btnSolve.textContent = 'Solve'; statusEl.textContent = 'Ready. Press Solve to watch backtracking in action.'; pickBtns.forEach(function(b){ b.setAttribute('aria-pressed', String(+b.dataset.p === p)); }); } function ok(c, v){ var r = (c/9)|0, col = c%9, i; for(i=0;i<9;i++){ if(grid[r*9+i] === v && r*9+i !== c) return false; if(grid[i*9+col] === v && i*9+col !== c) return false; } var br = r - r%3, bc = col - col%3; for(var y=0;y<3;y++) for(var x=0;x<3;x++){ var k = (br+y)*9 + bc + x; if(k !== c && grid[k] === v) return false; } return true; } function* solver(){ var idx = 0; while(idx < empties.length){ var c = empties[idx], placed = false; for(var v = grid[c] + 1; v <= 9; v++){ if(ok(c, v)){ grid[c] = v; placed = true; steps++; yield {c:c, t:'place'}; break; } } if(placed){ idx++; } else { grid[c] = 0; backs++; yield {c:c, t:'back'}; idx--; if(idx < 0) return; } } } function paint(i){ var el = cells[i]; el.textContent = grid[i] ? grid[i] : ''; el.classList.toggle('given', given[i]); } function renderAll(){ for(var i=0;i<81;i++){ paint(i); cells[i].classList.remove('cur','pop','back'); } updateStats(); } function updateStats(){ var e = 0; for(var i=0;i<81;i++) if(!grid[i]) e++; elSteps.textContent = steps; elBack.textContent = backs; elEmpty.textContent = e; } function apply(v){ if(cur >= 0) cells[cur].classList.remove('cur'); cur = v.c; var el = cells[v.c]; paint(v.c); el.classList.add('cur'); el.classList.remove('pop','back'); void el.offsetWidth; el.classList.add(v.t === 'place' ? 'pop' : 'back'); } function finish(){ running = false; finished = true; if(cur >= 0){ cells[cur].classList.remove('cur'); cur = -1; } boardEl.classList.add('done'); boardEl.setAttribute('aria-label','Sudoku board solved'); updateStats(); btnSolve.textContent = 'Replay'; statusEl.textContent = 'Solved with ' + steps + ' placements and ' + backs + ' backtracks.'; } function frame(t){ if(!running) return; var sp = SPEEDS[+speedIn.value - 1]; if(t - last >= sp.interval){ last = t; for(var n=0;n<sp.per;n++){ var r = gen.next(); if(r.done){ finish(); return; } apply(r.value); } updateStats(); } raf = requestAnimationFrame(frame); } function runInstant(){ var r; do { r = gen.next(); } while(!r.done); renderAll(); finish(); } function start(){ if(finished){ load(pIndex); } if(reduce || +speedIn.value === 5){ runInstant(); return; } running = true; btnSolve.textContent = 'Pause'; statusEl.textContent = 'Solving… blue digits are tries, red flashes are backtracks.'; last = 0; raf = requestAnimationFrame(frame); } function pause(){ running = false; cancelAnimationFrame(raf); btnSolve.textContent = 'Resume'; statusEl.textContent = 'Paused.'; } btnSolve.addEventListener('click', function(){ running ? pause() : start(); }); btnReset.addEventListener('click', function(){ load(pIndex); }); pickBtns.forEach(function(b){ b.addEventListener('click', function(){ load(+b.dataset.p); }); }); speedIn.addEventListener('input', function(){ speedOut.textContent = SPEEDS[+speedIn.value - 1].label; }); speedOut.textContent = SPEEDS[+speedIn.value - 1].label; load(0); if(reduce){ runInstant(); } else { setTimeout(function(){ if(!running && !finished && steps === 0) start(); }, 900); } /* ---------- Skill givens ---------- */ var readout = document.getElementById('readout'); document.querySelectorAll('.sk[data-k]').forEach(function(b){ function show(){ document.querySelectorAll('.sk.lit').forEach(function(x){ x.classList.remove('lit'); }); b.classList.add('lit'); readout.innerHTML = ''; var t = document.createElement('b'); t.textContent = b.dataset.k; readout.appendChild(t); readout.appendChild(document.createElement('br')); readout.appendChild(document.createTextNode(b.dataset.t)); } b.addEventListener('click', show); b.addEventListener('mouseenter', show); b.addEventListener('focus', show); }); /* ---------- Copy buttons ---------- */ var toast = document.getElementById('toast'); function say(el, msg){ el.textContent = msg; setTimeout(function(){ if(el.textContent === msg) el.textContent = ''; }, 2600); } document.querySelectorAll('[data-copy]').forEach(function(b){ b.addEventListener('click', function(){ var txt = b.dataset.copy; function fallback(){ var ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); say(toast, 'Copied: ' + txt); } catch(e){ say(toast, 'Press and hold to copy: ' + txt); } document.body.removeChild(ta); } if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ say(toast, 'Copied: ' + txt); }, fallback); } else { fallback(); } }); }); /* ---------- Contact form → mailto ---------- */ var form = document.getElementById('contact-form'); var ft = document.getElementById('form-toast'); form.addEventListener('submit', function(e){ e.preventDefault(); var n = document.getElementById('f-name').value.trim(); var m = document.getElementById('f-email').value.trim(); var msg = document.getElementById('f-msg').value.trim(); if(!n || !m || !msg){ say(ft, 'Please fill in all three fields.'); ft.style.color = 'var(--accent)'; return; } ft.style.color = 'var(--good)'; var subject = 'Portfolio message from ' + n; var body = msg + '\n\n— ' + n + '\n' + m; window.location.href = 'mailto:as4108719@gmail.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); say(ft, 'Opening your email app…'); }); })(); </script> </body> </html>
